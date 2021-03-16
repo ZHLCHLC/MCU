@@ -1,0 +1,10 @@
+"..\output\air.obj",
+"..\output\guangzhao.obj",
+"..\output\timer.obj",
+"..\output\uart.obj",
+"..\output\RS485.obj",
+"..\output\adc.obj",
+"..\output\main.obj",
+"..\output\pbdata.obj" 
+TO "..\output\bishe" 
+PRINT(".\Listings\bishe.m51") RAMSIZE(256) 

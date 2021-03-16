@@ -1,0 +1,62 @@
+C51 COMPILER V9.54   RS485                                                                 03/11/2021 23:01:56 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE RS485
+OBJECT MODULE PLACED IN ..\output\RS485.obj
+COMPILER INVOKED BY: C:\mcu\C51\C51\BIN\C51.EXE ..\bsp\RS485.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\bsp;..\user) DEBUG OBJ
+                    -ECTEXTEND PRINT(.\Listings\RS485.lst) OBJECT(..\output\RS485.obj)
+
+line level    source
+
+   1          #include "pbdata.h"
+   2          
+   3          
+   4          int EC_data;
+   5          
+   6          void delay80ms()   
+   7          {
+   8   1          unsigned char a,b,c;
+   9   1          for(c=165;c>0;c--)
+  10   1              for(b=233;b>0;b--)
+  11   1                  for(a=10;a>0;a--);
+  12   1          _nop_();  
+  13   1      }
+  14          
+  15          void add485Data()
+  16          {
+  17   1              IE2=0;
+  18   1              RE_DE=1;                   //设置为发送模式
+  19   1              flay485=0;            
+  20   1              
+  21   1              Uart3SendByte(0x04);// delay10us();      //发送地址
+  22   1              Uart3SendByte(0x03);// delay10us();
+  23   1              Uart3SendByte(0x00);// delay10us();
+  24   1              Uart3SendByte(0x00);// delay10us();
+  25   1              Uart3SendByte(0x00);// delay10us();
+  26   1              Uart3SendByte(0x01);// delay10us();
+  27   1              Uart3SendByte(0x84);// delay10us();
+  28   1              Uart3SendByte(0x5f);// delay10us();
+  29   1              
+  30   1        IE2=0x08;             //串口3中断使能 
+  31   1              RE_DE=0;            //设置为接收模式
+  32   1        delay80ms();delay80ms();delay80ms();delay80ms();delay80ms();delay80ms();
+  33   1                              
+  34   1                EC_data=(ReceData[3]<<8)+ReceData[4];
+  35   1              
+  36   1      //  RE_DE=1;
+  37   1      }
+  38          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    102    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      2    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

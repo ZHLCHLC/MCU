@@ -1,0 +1,144 @@
+C51 COMPILER V9.54   AIR                                                                   03/11/2021 23:01:55 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE AIR
+OBJECT MODULE PLACED IN ..\output\air.obj
+COMPILER INVOKED BY: C:\mcu\C51\C51\BIN\C51.EXE ..\bsp\air.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\bsp;..\user) DEBUG OBJEC
+                    -TEXTEND PRINT(.\Listings\air.lst) OBJECT(..\output\air.obj)
+
+line level    source
+
+   1          #include "pbdata.h"
+   2          
+   3          typedef unsigned char u8;
+   4          typedef unsigned int u16;
+   5          
+   6          
+   7          u8  U8FLAG,k;
+   8          u8  U8count,U8temp;
+   9          u8  U8T_data_H,U8T_data_L,U8RH_data_H,U8RH_data_L,U8checkdata;
+  10          u8  U8T_data_H_temp,U8T_data_L_temp,U8RH_data_H_temp,U8RH_data_L_temp,U8checkdata_temp;
+  11          u8  U8comdata;
+  12          
+  13          
+  14          int temp,humidity;
+  15          
+  16          
+  17          void delay10us()   
+  18          {
+  19   1          unsigned char a,b;
+  20   1          for(b=21;b>0;b--)
+  21   1              for(a=1;a>0;a--);
+  22   1      }
+  23          
+  24          void delay18ms() 
+  25          {
+  26   1          unsigned char a,b,c;
+  27   1          for(c=148;c>0;c--)
+  28   1              for(b=122;b>0;b--)
+  29   1                  for(a=4;a>0;a--);
+  30   1      }
+  31          
+  32                  
+  33          void  COM(void)
+  34                {
+  35   1           
+  36   1                      u8 i;
+  37   1                
+  38   1             for(i=0;i<8;i++)    
+  39   1                  {
+  40   2                      
+  41   2                          U8FLAG=2;   
+  42   2                      while((!P2_0)&&U8FLAG++);
+  43   2                                      delay10us();
+  44   2                                      delay10us();
+  45   2                                      delay10us();
+  46   2                              U8temp=0;
+  47   2                   if(P2_0)U8temp=1;
+  48   2                          U8FLAG=2;
+  49   2                       while((P2_0)&&U8FLAG++);
+  50   2                      //超时则跳出for循环               
+  51   2                       if(U8FLAG==1)break;
+  52   2                      //判断数据位是0还是1     
+  53   2                         
+  54   2                      // 如果高电平高过预定0高电平值则数据位为 1 
+C51 COMPILER V9.54   AIR                                                                   03/11/2021 23:01:55 PAGE 2   
+
+  55   2                       
+  56   2                         U8comdata<<=1;
+  57   2                         U8comdata|=U8temp;        //0
+  58   2                   }//rof
+  59   1                 
+  60   1              }
+  61          
+  62          
+  63          void RH()
+  64          {
+  65   1                //主机拉低18ms 
+  66   1             P2_0=0;
+  67   1              delay18ms() ;
+  68   1                 P2_0=1;
+  69   1               //总线由上拉电阻拉高 主机延时20us
+  70   1                  delay10us();
+  71   1              delay10us();
+  72   1              delay10us();
+  73   1              delay10us();
+  74   1               //主机设为输入 判断从机响应信号 
+  75   1                 P2_0=1;
+  76   1               //判断从机是否有低电平响应信号 如不响应则跳出，响应则向下运行    
+  77   1                 if(!P2_0)             //T !    
+  78   1                 {
+  79   2                               U8FLAG=2;
+  80   2                       //判断从机是否发出 80us 的低电平响应信号是否结束        
+  81   2                               while((!P2_0)&&U8FLAG++);
+  82   2                               U8FLAG=2;
+  83   2                       //判断从机是否发出 80us 的高电平，如发出则进入数据接收状态
+  84   2                               while((P2_0)&&U8FLAG++);
+  85   2                       //数据接收状态          
+  86   2                               COM();
+  87   2                               U8RH_data_H_temp=U8comdata;
+  88   2                               COM();
+  89   2                               U8RH_data_L_temp=U8comdata;
+  90   2                               COM();
+  91   2                               U8T_data_H_temp=U8comdata;
+  92   2                               COM();
+  93   2                               U8T_data_L_temp=U8comdata;
+  94   2                               COM();
+  95   2                               U8checkdata_temp=U8comdata;
+  96   2                               P2_0=1;
+  97   2                       //数据校验 
+  98   2                       
+  99   2                               U8temp=(U8T_data_H_temp+U8T_data_L_temp+U8RH_data_H_temp+U8RH_data_L_temp);
+ 100   2                               if(U8temp==U8checkdata_temp)
+ 101   2                               {
+ 102   3                                              U8RH_data_H=U8RH_data_H_temp;
+ 103   3                                              U8RH_data_L=U8RH_data_L_temp;
+ 104   3                                              U8T_data_H=U8T_data_H_temp;
+ 105   3                                              U8T_data_L=U8T_data_L_temp;
+ 106   3                                              U8checkdata=U8checkdata_temp;
+ 107   3                               }//fi
+ 108   2                 }//fi 
+ 109   1      }
+ 110          
+ 111          void count_H_T()
+ 112          {
+ 113   1              RH();
+ 114   1              humidity=U8RH_data_H*256+(U8RH_data_L>>4)*16+(U8RH_data_L&0x0f);         //湿度
+ 115   1              temp=U8T_data_H*256+(U8T_data_L>>4)*16+(U8T_data_L&0x0f);               //温度
+ 116   1      }
+C51 COMPILER V9.54   AIR                                                                   03/11/2021 23:01:55 PAGE 3   
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    266    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     19    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

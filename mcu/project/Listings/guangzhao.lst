@@ -1,0 +1,172 @@
+C51 COMPILER V9.54   GUANGZHAO                                                             03/11/2021 23:01:55 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE GUANGZHAO
+OBJECT MODULE PLACED IN ..\output\guangzhao.obj
+COMPILER INVOKED BY: C:\mcu\C51\C51\BIN\C51.EXE ..\bsp\guangzhao.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\bsp;..\user) DEBUG
+                    - OBJECTEXTEND PRINT(.\Listings\guangzhao.lst) OBJECT(..\output\guangzhao.obj)
+
+line level    source
+
+   1          #include "pbdata.h"
+   2          
+   3          
+   4          typedef unsigned char u8;
+   5          typedef unsigned int u16;
+   6          
+   7          u8 BUF2[8];                         //接收数据缓存区            
+   8          int dis_data2;                       //变量
+   9          int L_temp2;
+  10          
+  11          void Delay5us2()
+  12          {
+  13   1           unsigned char a;
+  14   1          for(a=27;a>0;a--);
+  15   1      }
+  16          
+  17          void Delay5ms2()
+  18          {
+  19   1        unsigned char a,b;
+  20   1          for(b=202;b>0;b--)
+  21   1              for(a=147;a>0;a--);
+  22   1      }
+  23          
+  24          
+  25          
+  26          //起始信号
+  27          void BH1750_Start2()
+  28          {
+  29   1          SDA2 = 1;                    //拉高数据线
+  30   1          SCL2 = 1;                    //拉高时钟线
+  31   1          Delay5us2();                 //延时
+  32   1          SDA2 = 0;                    //产生下降沿
+  33   1          Delay5us2();                 //延时
+  34   1          SCL2 = 0;                    //拉低时钟线
+  35   1      }
+  36          
+  37          //停止信号
+  38          void BH1750_Stop2()
+  39          {
+  40   1          SDA2 = 0;                    //拉低数据线
+  41   1          SCL2 = 1;                    //拉高时钟线
+  42   1          Delay5us2();                 //延时
+  43   1          SDA2 = 1;                    //产生上升沿
+  44   1          Delay5us2();                 //延时
+  45   1      }
+  46          
+  47          /**************************************
+  48          发送应答信号
+  49          入口参数:ack (0:ACK 1:NAK)
+  50          **************************************/
+  51          void BH1750_SendACK2(bit ack)
+  52          {
+  53   1          SDA2 = ack;                  //写应答信号
+  54   1          SCL2 = 1;                    //拉高时钟线
+C51 COMPILER V9.54   GUANGZHAO                                                             03/11/2021 23:01:55 PAGE 2   
+
+  55   1          Delay5us2();                 //延时
+  56   1          SCL2 = 0;                    //拉低时钟线
+  57   1          Delay5us2();                 //延时
+  58   1      }
+  59          
+  60          //接收应答信号
+  61          bit BH1750_RecvACK2()
+  62          {
+  63   1          SCL2 = 1;                    //拉高时钟线
+  64   1          Delay5us2();                 //延时
+  65   1          CY = SDA2;                   //读应答信号
+  66   1          SCL2 = 0;                    //拉低时钟线
+  67   1          Delay5us2();                 //延时
+  68   1          return CY;
+  69   1      }
+  70          
+  71          //向IIC总线发送一个字节数据
+  72          void BH1750_Senduchar2(char dat)
+  73          {
+  74   1          u8 i;
+  75   1          for (i=0; i<8; i++)         //8位计数器
+  76   1          {
+  77   2              dat <<= 1;              //移出数据的最高位
+  78   2              SDA2 = CY;               //送数据口
+  79   2              SCL2 = 1;                //拉高时钟线
+  80   2              Delay5us2();             //延时
+  81   2              SCL2 = 0;                //拉低时钟线
+  82   2              Delay5us2();             //延时
+  83   2          }
+  84   1          BH1750_RecvACK2();
+  85   1      }
+  86          
+  87          //从IIC总线接收一个字节数据
+  88          char BH1750_Recvuchar2()
+  89          {
+  90   1          u8 i;
+  91   1          u8 dat = 0;
+  92   1          SDA2 = 1;                    //使能内部上拉,准备读取数据,
+  93   1          for (i=0; i<8; i++)         //8位计数器
+  94   1          {
+  95   2              dat <<= 1;
+  96   2              SCL2 = 1;                //拉高时钟线
+  97   2              Delay5us2();             //延时
+  98   2              dat |= SDA2;             //读数据               
+  99   2              SCL2 = 0;                //拉低时钟线
+ 100   2              Delay5us2();             //延时
+ 101   2          }
+ 102   1          return dat;
+ 103   1      }
+ 104          
+ 105          void Single_Write_BH17502(char REG_Address)
+ 106          {
+ 107   1          BH1750_Start2();                  //起始信号
+ 108   1          BH1750_Senduchar2(SlaveAddress);   //发送设备地址+写信号
+ 109   1          BH1750_Senduchar2(REG_Address);    //内部寄存器地址，请参考中文pdf22页 
+ 110   1          BH1750_Stop2();                   //发送停止信号
+ 111   1      }
+ 112          
+ 113          //连续读出BH1750内部数据
+ 114          void Multiple_read_BH17502(void)
+ 115          {   
+ 116   1              u8 i;   
+C51 COMPILER V9.54   GUANGZHAO                                                             03/11/2021 23:01:55 PAGE 3   
+
+ 117   1              BH1750_Start2();                          //起始信号
+ 118   1              BH1750_Senduchar2(SlaveAddress+1);         //发送设备地址+读信号
+ 119   1              for (i=0; i<3; i++)                      //连续读取6个地址数据，存储中BUF
+ 120   1              {
+ 121   2                  BUF2[i] = BH1750_Recvuchar2();          //BUF[0]存储0x32地址中的数据
+ 122   2                  if (i == 3)
+ 123   2                     BH1750_SendACK2(1);                //最后一个数据需要回NOACK
+ 124   2                  else
+ 125   2                    BH1750_SendACK2(0);                //回应ACK
+ 126   2              }
+ 127   1              BH1750_Stop2();                          //停止信号
+ 128   1              Delay5ms2();
+ 129   1      }
+ 130          
+ 131          //初始化BH1750
+ 132          void Init_BH17502()
+ 133          {
+ 134   1              Single_Write_BH17502(0x01);  
+ 135   1              Single_Write_BH17502(0x10); 
+ 136   1      }
+ 137          
+ 138          void read_data_BH17502()
+ 139          {
+ 140   1              Multiple_read_BH17502();       //连续读出数据，存储在BUF中
+ 141   1              dis_data2=BUF2[0];
+ 142   1              dis_data2=(dis_data2<<8)+BUF2[1];   //合成数据 
+ 143   1              L_temp2=(float)dis_data2/1.2;
+ 144   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    244    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     12    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----       1
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
